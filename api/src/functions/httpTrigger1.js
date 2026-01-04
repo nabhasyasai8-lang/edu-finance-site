@@ -49,9 +49,15 @@ function buildResult(d) {
 }
 
 app.http("httpTrigger1", {
-  methods: ["POST"],
+  methods: ["GET", "POST"],
   authLevel: "anonymous",
   handler: async (request) => {
+    // If someone opens /api/httpTrigger1 in browser (GET), return a simple message
+    if (request.method === "GET") {
+      return { jsonBody: { ok: true, message: "API is running. Use POST to get plans." } };
+    }
+
+    // Normal POST flow
     const data = await request.json().catch(() => ({}));
     return { jsonBody: { ok: true, result: buildResult(data) } };
   },
