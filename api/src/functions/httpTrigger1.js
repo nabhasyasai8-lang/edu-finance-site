@@ -9,31 +9,31 @@ function buildResult(d) {
   const income = toNum(d.income);
   const expenses = toNum(d.expenses);
   const savings = toNum(d.savings);
+
   const surplus = income - expenses;
   const timeHorizon = String(d.timeHorizon || "");
-  const emergencyMonths = expenses > 0 ? savings / expenses : 0;
 
   const options = [
     {
       title: "Safe Plan",
       risk: "Low",
       instruments: ["FD (Fixed Deposit)"],
-      allocation: "Emergency + short‑term goals in FD",
-      why: "Capital protection. Suitable only for short horizons."
+      allocation: "100% FD",
+      why: "Capital protection. Suitable for short-term needs."
     },
     {
       title: "Balanced Plan",
       risk: "Medium",
       instruments: ["FD", "SIP (Mutual Funds)"],
-      allocation: "60% SIP, 40% FD",
-      why: "Moderate growth with controlled volatility."
+      allocation: "40% FD, 60% SIP",
+      why: "Better growth than FD with some stability."
     },
     {
       title: "Growth Plan",
       risk: "High",
       instruments: ["SIP (Equity Mutual Funds)"],
-      allocation: "100% SIP (Equity‑oriented)",
-      why: "Maximizes long‑term wealth creation over 5+ years."
+      allocation: "100% SIP",
+      why: "Highest long-term wealth creation potential."
     }
   ];
 
@@ -41,19 +41,17 @@ function buildResult(d) {
 
   // 🚫 Rule 1: No surplus → no investing
   if (surplus <= 0) {
-    const stabilityPlan = {
+    recommended = {
       title: "Stability Plan",
       risk: "Very Low",
       instruments: ["Budgeting", "Emergency Buffer"],
-      allocation: "Reduce expenses and create surplus first",
+      allocation: "Create surplus first",
       why:
-        "Investing is not possible without surplus. Focus on cash‑flow stability."
+        "Expenses are greater than or equal to income. Investing is not possible yet."
     };
-    options.unshift(stabilityPlan);
-    recommended = stabilityPlan;
+    options.unshift(recommended);
   }
-
-  // 🚀 Rule 2: Profit‑first based on time horizon
+  // ⏱ Rule 2: Recommendation ONLY by time horizon (money-maximizing)
   else {
     if (timeHorizon === "5y+") {
       recommended = options.find(p => p.title === "Growth Plan");
@@ -69,7 +67,6 @@ function buildResult(d) {
     expenses,
     savings,
     surplus,
-    emergencyMonths,
     timeHorizon,
     options,
     recommended
@@ -81,11 +78,16 @@ app.http("httpTrigger1", {
   authLevel: "anonymous",
   handler: async (request) => {
     if (request.method === "GET") {
-      return { jsonBody: { ok: true, message: "API is running" } };
+      return {
+        jsonBody: {
+          ok: true,
+          message: "API is running. Use POST to get financial plans."
+        }
+      };
     }
 
     const data = await request.json().catch(() => ({}));
     return { jsonBody: { ok: true, result: buildResult(data) } };
-  },
+  }
 });
 
