@@ -89,13 +89,14 @@
         <option>Self-funded / Working</option>
       </select>
 
-      <label>Monthly financial comfort level</label>
-      <select name="monthlyComfort">
-        <option>Below ₹10,000</option>
-        <option>₹10,000 – ₹25,000</option>
-        <option>₹25,000 – ₹50,000</option>
-        <option>Above ₹50,000</option>
-      </select>
+    <label for="timeHorizon">Time Horizon (When do you need the money?)</label>
+<select id="timeHorizon" name="timeHorizon" required>
+  <option value="">Select time horizon</option>
+  <option>0–6M</option>
+  <option>6–24M</option>
+  <option>2–5Y</option>
+  <option>5Y+</option>
+</select>
 
       <label>Monthly Income (₹)</label>
       <input type="text" name="income" placeholder="Example: 30000" required />
@@ -105,6 +106,8 @@
 
       <label>Current Savings (₹)</label>
       <input type="text" name="savings" placeholder="Example: 50000" required />
+
+
 
       <button type="submit">Submit</button>
     </form>
