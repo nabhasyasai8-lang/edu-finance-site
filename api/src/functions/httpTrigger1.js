@@ -1,29 +1,24 @@
 const { app } = require("@azure/functions");
+const { TextAnalysisClient, AzureKeyCredential } = require("@azure/ai-language-text");
 
+/* ---------- helpers ---------- */
 function toNum(v) {
   const n = Number(String(v ?? "").replace(/[^\d.]/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
 
 function normalizeHorizon(raw) {
-  // Handles: "5y+", "5Y+", "5+ years", "0–6M", "0-6m", etc.
   return String(raw ?? "")
     .trim()
     .toLowerCase()
-    .replace(/–/g, "-")      // convert en-dash to hyphen
-    .replace(/\s+/g, "");   // remove spaces
+    .replace(/–/g, "-")
+    .replace(/\s+/g, "");
 }
 
 function horizonBucket(raw) {
   const h = normalizeHorizon(raw);
-
-  // long
   if (h === "5y+" || h === "5+y" || h.includes("5y+") || h.includes("5+")) return "long";
-
-  // medium
-  if (h === "2-5y" || h === "2–5y" || h.includes("2-5")) return "mid";
-
-  // short (includes 0-6m, 6-24m, empty, unknown)
+  if (h === "2-5y" || h.includes("2-5")) return "mid";
   return "short";
 }
 
@@ -33,7 +28,7 @@ function buildResult(d) {
   const savings = toNum(d.savings);
 
   const surplus = income - expenses;
-  const timeHorizonRaw = d.timeHorizon;               // whatever HTML sends
+  const timeHorizonRaw = d.timeHorizon;
   const bucket = horizonBucket(timeHorizonRaw);
 
   const options = [
@@ -62,7 +57,6 @@ function buildResult(d) {
 
   let recommended;
 
-  // Rule 1: No surplus => no investing
   if (surplus <= 0) {
     recommended = {
       title: "Stability Plan",
@@ -73,7 +67,6 @@ function buildResult(d) {
     };
     options.unshift(recommended);
   } else {
-    // Rule 2: ONLY by time horizon (money-maximizing)
     if (bucket === "long") recommended = options.find(p => p.title === "Growth Plan");
     else if (bucket === "mid") recommended = options.find(p => p.title === "Balanced Plan");
     else recommended = options.find(p => p.title === "Safe Plan");
@@ -85,12 +78,45 @@ function buildResult(d) {
     savings,
     surplus,
     timeHorizon: String(timeHorizonRaw ?? ""),
-    horizonBucket: bucket, // helpful for debugging
+    horizonBucket: bucket,
     options,
     recommended
   };
 }
 
+/* ---------- Azure AI Language call ---------- */
+async function analyzeProblemText(problemDescription) {
+  const endpoint = process.env.LANGUAGE_ENDPOINT;
+  const key = process.env.LANGUAGE_KEY;
+
+  if (!endpoint || !key) {
+    return { error: "Missing LANGUAGE_ENDPOINT or LANGUAGE_KEY in environment variables" };
+  }
+
+  const text = String(problemDescription ?? "").trim();
+  if (!text) return null;
+
+  const client = new TextAnalysisClient(endpoint, new AzureKeyCredential(key));
+  const actions = [
+    { kind: "SentimentAnalysis" },
+    { kind: "KeyPhraseExtraction" }
+  ];
+
+  const [doc] = await client.analyze(actions, [text]);
+
+  if (!doc || doc.error) return { error: doc?.error || "AI analysis failed" };
+
+  const sentimentRes = doc.results.find(r => r.kind === "SentimentAnalysis");
+  const keyphraseRes = doc.results.find(r => r.kind === "KeyPhraseExtraction");
+
+  return {
+    sentiment: sentimentRes?.sentiment || null,
+    confidence: sentimentRes?.confidenceScores || null,
+    keyPhrases: keyphraseRes?.keyPhrases || []
+  };
+}
+
+/* ---------- HTTP trigger ---------- */
 app.http("httpTrigger1", {
   methods: ["GET", "POST"],
   authLevel: "anonymous",
@@ -98,8 +124,19 @@ app.http("httpTrigger1", {
     if (request.method === "GET") {
       return { jsonBody: { ok: true, message: "API is running. Use POST to get financial plans." } };
     }
+
     const data = await request.json().catch(() => ({}));
-    return { jsonBody: { ok: true, result: buildResult(data) } };
+    const result = buildResult(data);
+
+    let ai = null;
+    try {
+      ai = await analyzeProblemText(data.problemDescription);
+    } catch (e) {
+      ai = { error: String(e) };
+    }
+
+    return { jsonBody: { ok: true, result: { ...result, ai } } };
   }
 });
+
 
