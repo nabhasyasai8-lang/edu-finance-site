@@ -96,15 +96,15 @@
         <option>₹25,000 – ₹50,000</option>
         <option>Above ₹50,000</option>
       </select>
+
       <label>Monthly Income (₹)</label>
-<input type="text" name="income" placeholder="Example: 30000" required />
+      <input type="text" name="income" placeholder="Example: 30000" required />
 
-<label>Monthly Expenses (₹)</label>
-<input type="text" name="expenses" placeholder="Example: 20000" required />
+      <label>Monthly Expenses (₹)</label>
+      <input type="text" name="expenses" placeholder="Example: 20000" required />
 
-<label>Current Savings (₹)</label>
-<input type="text" name="savings" placeholder="Example: 50000" required />
-
+      <label>Current Savings (₹)</label>
+      <input type="text" name="savings" placeholder="Example: 50000" required />
 
       <button type="submit">Submit</button>
     </form>
@@ -122,23 +122,57 @@
 
       const formData = Object.fromEntries(new FormData(e.target).entries());
 
-      const res = await fetch("/api/httpTrigger1", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await res.json();
-      const result = data.result;
-
+      const resultBox = document.getElementById("resultBox");
       const plansDiv = document.getElementById("plans");
+      resultBox.style.display = "block";
+      plansDiv.innerHTML = `<div class="plan-card"><b>Loading analysis...</b></div>`;
+
+      let res, text;
+      try {
+        res = await fetch("/api/httpTrigger1", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+        text = await res.text();
+      } catch (err) {
+        plansDiv.innerHTML =
+          `<div class="plan-card"><b>Network error:</b><pre>${String(err)}</pre></div>`;
+        return;
+      }
+
+      // Show backend errors clearly on the page
+      if (!res.ok) {
+        plansDiv.innerHTML =
+          `<div class="plan-card"><b>API Error:</b> ${res.status}<pre>${text}</pre></div>`;
+        return;
+      }
+
+      // Parse JSON safely
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        plansDiv.innerHTML =
+          `<div class="plan-card"><b>Bad JSON from API:</b><pre>${text}</pre></div>`;
+        return;
+      }
+
+      const result = data.result;
+      if (!result || !Array.isArray(result.options)) {
+        plansDiv.innerHTML =
+          `<div class="plan-card"><b>Unexpected API response:</b><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        return;
+      }
+
+      // Render cards
       plansDiv.innerHTML = "";
 
       result.options.forEach(plan => {
         const card = document.createElement("div");
         card.className = "plan-card";
 
-        if (plan.title === result.recommended.title) {
+        if (result.recommended && plan.title === result.recommended.title) {
           card.classList.add("recommended");
           card.innerHTML += `<div class="recommended-badge">Recommended</div>`;
         }
@@ -146,15 +180,13 @@
         card.innerHTML += `
           <h3>${plan.title}</h3>
           <div class="risk">Risk Level: ${plan.risk}</div>
-          <p><b>Instruments:</b> ${plan.instruments.join(", ")}</p>
-          <p><b>Allocation:</b> ${plan.allocation}</p>
-          <p>${plan.why}</p>
+          <p><b>Instruments:</b> ${(plan.instruments || []).join(", ")}</p>
+          <p><b>Allocation:</b> ${plan.allocation || ""}</p>
+          <p>${plan.why || ""}</p>
         `;
 
         plansDiv.appendChild(card);
       });
-
-      document.getElementById("resultBox").style.display = "block";
     });
   </script>
 </body>
