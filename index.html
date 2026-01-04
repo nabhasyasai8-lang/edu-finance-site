@@ -5,9 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EduFinance – Learn. Plan. Decide.</title>
   <link rel="stylesheet" href="style.css" />
-</head>
-<body>
 
+  <style>
+    .plans {
+      margin-top: 25px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+    }
+
+    .plan-card {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      background: #fafafa;
+    }
+
+    .plan-card h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .risk {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .recommended {
+      border-color: #0078D4;
+      background: #e8f3ff;
+    }
+
+    .recommended-badge {
+      background: #0078D4;
+      color: white;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
   <div class="container">
     <h1>EduFinance Insight</h1>
     <p class="subtitle">
@@ -16,10 +57,10 @@
 
     <form id="intakeForm">
       <label>Your Name</label>
-      <input type="text" placeholder="Enter your name" />
+      <input type="text" name="name" required />
 
       <label>You are a</label>
-      <select>
+      <select name="role">
         <option>School Student</option>
         <option>College Student</option>
         <option>Graduate</option>
@@ -27,10 +68,10 @@
       </select>
 
       <label>Main Education Goal</label>
-      <input type="text" placeholder="Example: Engineering, MBA, Skill course" />
+      <input type="text" name="educationGoal" />
 
       <label>Financial Concern</label>
-      <select>
+      <select name="financialConcern">
         <option>High tuition fees</option>
         <option>Education loan confusion</option>
         <option>Family financial pressure</option>
@@ -38,35 +79,75 @@
       </select>
 
       <label>Describe the problem you are facing</label>
-      <textarea placeholder="Explain your situation in your own words..."></textarea>
+      <textarea name="problemDescription"></textarea>
 
       <label>How do you currently fund your education?</label>
-<select>
-  <option>Family support</option>
-  <option>Education loan</option>
-  <option>Scholarship</option>
-  <option>Self-funded / Working</option>
-  <option>Not decided yet</option>
-</select>
+      <select name="fundingSource">
+        <option>Family support</option>
+        <option>Education loan</option>
+        <option>Scholarship</option>
+        <option>Self-funded / Working</option>
+      </select>
 
-<label>Monthly financial comfort level (approx)</label>
-<select>
-  <option>Below ₹10,000</option>
-  <option>₹10,000 – ₹25,000</option>
-  <option>₹25,000 – ₹50,000</option>
-  <option>Above ₹50,000</option>
-  <option>Prefer not to say</option>
-</select>
+      <label>Monthly financial comfort level</label>
+      <select name="monthlyComfort">
+        <option>Below ₹10,000</option>
+        <option>₹10,000 – ₹25,000</option>
+        <option>₹25,000 – ₹50,000</option>
+        <option>Above ₹50,000</option>
+      </select>
 
       <button type="submit">Submit</button>
     </form>
-  </div>
-<script>
-  document.getElementById("intakeForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    alert("✅ Submitted! Next we will analyze your case safely.");
-  });
-</script>
 
+    <!-- RESULTS -->
+    <div id="resultBox" style="display:none;">
+      <h2>Your Financial Options</h2>
+      <div id="plans" class="plans"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("intakeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = Object.fromEntries(new FormData(e.target).entries());
+
+      const res = await fetch("/api/httpTrigger1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await res.json();
+      const result = data.result;
+
+      const plansDiv = document.getElementById("plans");
+      plansDiv.innerHTML = "";
+
+      result.options.forEach(plan => {
+        const card = document.createElement("div");
+        card.className = "plan-card";
+
+        if (plan.title === result.recommended.title) {
+          card.classList.add("recommended");
+          card.innerHTML += `<div class="recommended-badge">Recommended</div>`;
+        }
+
+        card.innerHTML += `
+          <h3>${plan.title}</h3>
+          <div class="risk">Risk Level: ${plan.risk}</div>
+          <p><b>Instruments:</b> ${plan.instruments.join(", ")}</p>
+          <p><b>Allocation:</b> ${plan.allocation}</p>
+          <p>${plan.why}</p>
+        `;
+
+        plansDiv.appendChild(card);
+      });
+
+      document.getElementById("resultBox").style.display = "block";
+    });
+  </script>
 </body>
 </html>
+
