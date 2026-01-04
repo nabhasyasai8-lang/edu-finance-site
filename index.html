@@ -13,29 +13,23 @@
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 15px;
     }
-
     .plan-card {
       border: 2px solid #ddd;
       border-radius: 8px;
       padding: 15px;
       background: #fafafa;
     }
-
     .plan-card h3 {
       margin-top: 0;
-      color: #333;
     }
-
     .risk {
       font-weight: bold;
       margin-bottom: 8px;
     }
-
     .recommended {
       border-color: #0078D4;
       background: #e8f3ff;
     }
-
     .recommended-badge {
       background: #0078D4;
       color: white;
@@ -51,70 +45,30 @@
 <body>
   <div class="container">
     <h1>EduFinance Insight</h1>
-    <p class="subtitle">
-      Helping students understand education choices and financial challenges — together.
-    </p>
+    <p class="subtitle">Helping students make smarter financial decisions</p>
 
     <form id="intakeForm">
       <label>Your Name</label>
       <input type="text" name="name" required />
 
-      <label>You are a</label>
-      <select name="role">
-        <option>School Student</option>
-        <option>College Student</option>
-        <option>Graduate</option>
-        <option>Working Professional</option>
+      <label>Time Horizon</label>
+      <select name="timeHorizon" required>
+        <option>0–6M</option>
+        <option>6–24M</option>
+        <option>2–5Y</option>
+        <option>5Y+</option>
       </select>
-
-      <label>Main Education Goal</label>
-      <input type="text" name="educationGoal" />
-
-      <label>Financial Concern</label>
-      <select name="financialConcern">
-        <option>High tuition fees</option>
-        <option>Education loan confusion</option>
-        <option>Family financial pressure</option>
-        <option>Not sure if course is worth the cost</option>
-      </select>
-
-      <label>Describe the problem you are facing</label>
-      <textarea name="problemDescription"></textarea>
-
-<!-- RESULTS -->
-<div id="resultBox" style="display:none;">
-  <h2>Your Financial Options</h2>
-  <div id="plans" class="plans"></div>
-
-  <!-- NEW: Definitions -->
-  <div id="definitionsBox" class="plan-card" style="margin-top:15px; display:none;">
-    <h3>Simple Definitions</h3>
-    <ul id="definitionsList" style="margin: 8px 0 0 18px;"></ul>
-  </div>
-</div>
-
-
-    <label for="timeHorizon">Time Horizon (When do you need the money?)</label>
-<select id="timeHorizon" name="timeHorizon" required>
-  <option value="">Select time horizon</option>
-  <option>0–6M</option>
-  <option>6–24M</option>
-  <option>2–5Y</option>
-  <option>5Y+</option>
-</select>
 
       <label>Monthly Income (₹)</label>
-      <input type="text" name="income" placeholder="Example: 30000" required />
+      <input type="text" name="income" required />
 
       <label>Monthly Expenses (₹)</label>
-      <input type="text" name="expenses" placeholder="Example: 20000" required />
+      <input type="text" name="expenses" required />
 
       <label>Current Savings (₹)</label>
-      <input type="text" name="savings" placeholder="Example: 50000" required />
+      <input type="text" name="savings" required />
 
-
-
-      <button type="submit">Submit</button>
+      <button type="submit">Get My Plan</button>
     </form>
 
     <!-- RESULTS -->
@@ -129,68 +83,38 @@
       e.preventDefault();
 
       const formData = Object.fromEntries(new FormData(e.target).entries());
-
-      const resultBox = document.getElementById("resultBox");
       const plansDiv = document.getElementById("plans");
+      const resultBox = document.getElementById("resultBox");
+
       resultBox.style.display = "block";
-      plansDiv.innerHTML = `<div class="plan-card"><b>Loading analysis...</b></div>`;
+      plansDiv.innerHTML = "Loading...";
 
-      let res, text;
-      try {
-        res = await fetch("/api/httpTrigger1", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData)
-        });
-        text = await res.text();
-      } catch (err) {
-        plansDiv.innerHTML =
-          `<div class="plan-card"><b>Network error:</b><pre>${String(err)}</pre></div>`;
-        return;
-      }
+      const res = await fetch("/api/httpTrigger1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
 
-      // Show backend errors clearly on the page
-      if (!res.ok) {
-        plansDiv.innerHTML =
-          `<div class="plan-card"><b>API Error:</b> ${res.status}<pre>${text}</pre></div>`;
-        return;
-      }
-
-      // Parse JSON safely
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        plansDiv.innerHTML =
-          `<div class="plan-card"><b>Bad JSON from API:</b><pre>${text}</pre></div>`;
-        return;
-      }
-
+      const data = await res.json();
       const result = data.result;
-      if (!result || !Array.isArray(result.options)) {
-        plansDiv.innerHTML =
-          `<div class="plan-card"><b>Unexpected API response:</b><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
-        return;
-      }
 
-      // Render cards
       plansDiv.innerHTML = "";
 
       result.options.forEach(plan => {
         const card = document.createElement("div");
         card.className = "plan-card";
 
-        if (result.recommended && plan.title === result.recommended.title) {
+        if (result.recommended.title === plan.title) {
           card.classList.add("recommended");
           card.innerHTML += `<div class="recommended-badge">Recommended</div>`;
         }
 
         card.innerHTML += `
           <h3>${plan.title}</h3>
-          <div class="risk">Risk Level: ${plan.risk}</div>
-          <p><b>Instruments:</b> ${(plan.instruments || []).join(", ")}</p>
-          <p><b>Allocation:</b> ${plan.allocation || ""}</p>
-          <p>${plan.why || ""}</p>
+          <div class="risk">Risk: ${plan.risk}</div>
+          <p><b>Instruments:</b> ${plan.instruments.join(", ")}</p>
+          <p><b>Allocation:</b> ${plan.allocation}</p>
+          <p>${plan.why}</p>
         `;
 
         plansDiv.appendChild(card);
