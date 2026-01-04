@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+global.crypto = crypto;
 const { app } = require("@azure/functions");
 const { TextAnalysisClient, AzureKeyCredential } = require("@azure/ai-language-text");
 
