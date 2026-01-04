@@ -2,7 +2,6 @@ const crypto = require("crypto");
 global.crypto = crypto;
 
 const { app } = require("@azure/functions");
-const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-analytics");
 
 /* ---------- helpers ---------- */
 function toNum(v) {
@@ -25,6 +24,18 @@ function horizonBucket(raw) {
   return "short";
 }
 
+/* Simple definitions to send to user */
+function investmentDefinitions() {
+  return {
+    fd: "FD (Fixed Deposit): You keep money in a bank for a fixed time and get a fixed interest. Low risk, predictable returns.",
+    fixedDeposit:
+      "Fixed Deposit: Same as FD. Bank deposit for a fixed period with fixed interest.",
+    mutualFunds:
+      "Mutual Funds: A pool of money from many people that a professional manager invests in shares/bonds. Returns can go up or down.",
+    sip: "SIP (Systematic Investment Plan): Investing a fixed amount regularly (usually monthly) into a mutual fund. Helps build habit and reduces timing risk."
+  };
+}
+
 function buildResult(d) {
   const income = toNum(d.income);
   const expenses = toNum(d.expenses);
@@ -34,9 +45,27 @@ function buildResult(d) {
   const bucket = horizonBucket(d.timeHorizon);
 
   const options = [
-    { title: "Safe Plan", risk: "Low", instruments: ["FD (Fixed Deposit)"], allocation: "100% FD", why: "Capital protection. Suitable for short-term needs." },
-    { title: "Balanced Plan", risk: "Medium", instruments: ["FD", "SIP (Mutual Funds)"], allocation: "40% FD, 60% SIP", why: "Better growth than FD with some stability." },
-    { title: "Growth Plan", risk: "High", instruments: ["SIP (Equity Mutual Funds)"], allocation: "100% SIP", why: "Highest long-term wealth creation potential." }
+    {
+      title: "Safe Plan",
+      risk: "Low",
+      instruments: ["FD (Fixed Deposit)"],
+      allocation: "100% FD",
+      why: "Capital protection. Suitable for short-term needs."
+    },
+    {
+      title: "Balanced Plan",
+      risk: "Medium",
+      instruments: ["FD", "SIP (Mutual Funds)"],
+      allocation: "40% FD, 60% SIP",
+      why: "Better growth than FD with some stability."
+    },
+    {
+      title: "Growth Plan",
+      risk: "High",
+      instruments: ["SIP (Equity Mutual Funds)"],
+      allocation: "100% SIP",
+      why: "Highest long-term wealth creation potential."
+    }
   ];
 
   let recommended;
@@ -55,27 +84,15 @@ function buildResult(d) {
     else recommended = options[0];
   }
 
-  return { income, expenses, savings, surplus, options, recommended };
-}
-
-/* ---------- AI ---------- */
-async function analyzeProblemText(text) {
-  const endpoint = process.env.LANGUAGE_ENDPOINT;
-  const key = process.env.LANGUAGE_KEY;
-
-  if (!endpoint || !key) {
-    return { error: "Missing LANGUAGE_ENDPOINT or LANGUAGE_KEY" };
-  }
-
-  if (!text) return null;
-
-  const client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(key));
-  const [sentiment] = await client.analyzeSentiment([text]);
-  const [phrases] = await client.extractKeyPhrases([text]);
-
   return {
-    sentiment: sentiment.sentiment,
-    keyPhrases: phrases.keyPhrases
+    income,
+    expenses,
+    savings,
+    surplus,
+    timeHorizonBucket: bucket,
+    options,
+    recommended,
+    definitions: investmentDefinitions() // ✅ simple definitions included
   };
 }
 
@@ -85,13 +102,13 @@ app.http("httpTrigger1", {
   authLevel: "anonymous",
   handler: async (request) => {
     if (request.method === "GET") {
-      return { jsonBody: { ok: true, message: "API is running" } };
+      return { jsonBody: { ok: true, message: "API is running (rule-based)" } };
     }
 
     const data = await request.json().catch(() => ({}));
     const result = buildResult(data);
-    const ai = await analyzeProblemText(data.problemDescription);
 
-    return { jsonBody: { ok: true, result: { ...result, ai } } };
+    return { jsonBody: { ok: true, result } };
   }
 });
+
