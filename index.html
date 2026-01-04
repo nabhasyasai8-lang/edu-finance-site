@@ -81,13 +81,18 @@
       <label>Describe the problem you are facing</label>
       <textarea name="problemDescription"></textarea>
 
-      <label>How do you currently fund your education?</label>
-      <select name="fundingSource">
-        <option>Family support</option>
-        <option>Education loan</option>
-        <option>Scholarship</option>
-        <option>Self-funded / Working</option>
-      </select>
+<!-- RESULTS -->
+<div id="resultBox" style="display:none;">
+  <h2>Your Financial Options</h2>
+  <div id="plans" class="plans"></div>
+
+  <!-- NEW: Definitions -->
+  <div id="definitionsBox" class="plan-card" style="margin-top:15px; display:none;">
+    <h3>Simple Definitions</h3>
+    <ul id="definitionsList" style="margin: 8px 0 0 18px;"></ul>
+  </div>
+</div>
+
 
     <label for="timeHorizon">Time Horizon (When do you need the money?)</label>
 <select id="timeHorizon" name="timeHorizon" required>
