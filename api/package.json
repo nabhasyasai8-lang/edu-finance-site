@@ -1,18 +1,13 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "",
+  "private": true,
+  "type": "commonjs",
+  "main": "index.js",
   "scripts": {
-    "start": "func start",
-    "test": "echo \"No tests yet...\""
+    "start": "func start"
   },
   "dependencies": {
-    "@azure/ai-text-analytics": "^5.1.0",
-    "@azure/functions": "^4.0.0"
-  },
-  "main": "src/{index.js,functions/*.js}",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+    "@azure/ai-text-analytics": "^5.1.0"
+  }
 }

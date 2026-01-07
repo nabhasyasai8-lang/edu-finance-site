@@ -1,9 +1,8 @@
-const crypto = require("crypto");
-global.crypto = crypto;
+const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-analytics");
 
-const { app } = require("@azure/functions");
+// Fix for environments where global.crypto isn't present
+global.crypto = global.crypto || require("crypto");
 
-/* ---------- helpers ---------- */
 function toNum(v) {
   const n = Number(String(v ?? "").replace(/[^\d.]/g, ""));
   return Number.isFinite(n) ? n : 0;
@@ -24,18 +23,6 @@ function horizonBucket(raw) {
   return "short";
 }
 
-/* Simple definitions to send to user */
-function investmentDefinitions() {
-  return {
-    fd: "FD (Fixed Deposit): You keep money in a bank for a fixed time and get a fixed interest. Low risk, predictable returns.",
-    fixedDeposit:
-      "Fixed Deposit: Same as FD. Bank deposit for a fixed period with fixed interest.",
-    mutualFunds:
-      "Mutual Funds: A pool of money from many people that a professional manager invests in shares/bonds. Returns can go up or down.",
-    sip: "SIP (Systematic Investment Plan): Investing a fixed amount regularly (usually monthly) into a mutual fund. Helps build habit and reduces timing risk."
-  };
-}
-
 function buildResult(d) {
   const income = toNum(d.income);
   const expenses = toNum(d.expenses);
@@ -45,30 +32,12 @@ function buildResult(d) {
   const bucket = horizonBucket(d.timeHorizon);
 
   const options = [
-    {
-      title: "Safe Plan",
-      risk: "Low",
-      instruments: ["FD (Fixed Deposit)"],
-      allocation: "100% FD",
-      why: "Capital protection. Suitable for short-term needs."
-    },
-    {
-      title: "Balanced Plan",
-      risk: "Medium",
-      instruments: ["FD", "SIP (Mutual Funds)"],
-      allocation: "40% FD, 60% SIP",
-      why: "Better growth than FD with some stability."
-    },
-    {
-      title: "Growth Plan",
-      risk: "High",
-      instruments: ["SIP (Equity Mutual Funds)"],
-      allocation: "100% SIP",
-      why: "Highest long-term wealth creation potential."
-    }
+    { title: "Safe Plan", risk: "Low", instruments: ["FD (Fixed Deposit)"], allocation: "100% FD", why: "Capital protection. Suitable for short-term needs." },
+    { title: "Balanced Plan", risk: "Medium", instruments: ["FD", "SIP (Mutual Funds)"], allocation: "40% FD, 60% SIP", why: "Better growth than FD with some stability." },
+    { title: "Growth Plan", risk: "High", instruments: ["SIP (Equity Mutual Funds)"], allocation: "100% SIP", why: "Highest long-term wealth creation potential." }
   ];
 
-  let recommended;
+  let recommended = null;
   if (surplus <= 0) {
     recommended = {
       title: "Stability Plan",
@@ -79,36 +48,46 @@ function buildResult(d) {
     };
     options.unshift(recommended);
   } else {
-    if (bucket === "long") recommended = options[2];
-    else if (bucket === "mid") recommended = options[1];
-    else recommended = options[0];
+    recommended = bucket === "long" ? options[2] : bucket === "mid" ? options[1] : options[0];
   }
 
-  return {
-    income,
-    expenses,
-    savings,
-    surplus,
-    timeHorizonBucket: bucket,
-    options,
-    recommended,
-    definitions: investmentDefinitions() // ✅ simple definitions included
-  };
+  return { income, expenses, savings, surplus, timeHorizon: String(d.timeHorizon ?? ""), horizonBucket: bucket, options, recommended };
 }
 
-/* ---------- HTTP trigger ---------- */
-app.http("httpTrigger1", {
-  methods: ["GET", "POST"],
-  authLevel: "anonymous",
-  handler: async (request) => {
-    if (request.method === "GET") {
-      return { jsonBody: { ok: true, message: "API is running (rule-based)" } };
-    }
+async function analyzeProblemText(problemDescription) {
+  const endpoint = process.env.LANGUAGE_ENDPOINT;
+  const key = process.env.LANGUAGE_KEY;
 
-    const data = await request.json().catch(() => ({}));
-    const result = buildResult(data);
+  if (!endpoint || !key) return { error: "Missing LANGUAGE_ENDPOINT or LANGUAGE_KEY" };
 
-    return { jsonBody: { ok: true, result } };
+  const text = String(problemDescription ?? "").trim();
+  if (!text) return null;
+
+  const client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(key));
+  const [sentimentDoc] = await client.analyzeSentiment([text]);
+  const [phrasesDoc] = await client.extractKeyPhrases([text]);
+
+  if (sentimentDoc.error) return { error: sentimentDoc.error.message || "Sentiment failed" };
+  if (phrasesDoc.error) return { error: phrasesDoc.error.message || "Key phrase extraction failed" };
+
+  return { sentiment: sentimentDoc.sentiment, confidence: sentimentDoc.confidenceScores, keyPhrases: phrasesDoc.keyPhrases || [] };
+}
+
+module.exports = async function (context, req) {
+  if (req.method === "GET") {
+    context.res = { status: 200, body: { ok: true, message: "API is running. Use POST /api/httpTrigger1" } };
+    return;
   }
-});
 
+  const data = req.body || {};
+  const result = buildResult(data);
+
+  let ai = null;
+  try {
+    ai = await analyzeProblemText(data.problemDescription);
+  } catch (e) {
+    ai = { error: String(e) };
+  }
+
+  context.res = { status: 200, body: { ok: true, result: { ...result, ai } } };
+};
