@@ -124,14 +124,48 @@
       <h2>Your Financial Options</h2>
       <div id="plans" class="plans"></div>
 
+      <!-- We will also show definitions here (same box) -->
       <div id="aiExplanation" class="ai-box" style="display:none;">
         <h3>AI Explanation</h3>
-        <p id="aiText">Loading AI explanation...</p>
+        <p id="aiText">Loading...</p>
       </div>
     </div>
   </div>
 
   <script>
+    // ✅ Simple layman definitions (used INSIDE AI box)
+    const termDefinitions = {
+      "FD (Fixed Deposit)": "FD (Fixed Deposit): You keep money in a bank for a fixed time and get guaranteed interest. Safer, but returns are usually lower.",
+      "FD": "FD (Fixed Deposit): You keep money in a bank for a fixed time and get guaranteed interest. Safer, but returns are usually lower.",
+      "SIP (Mutual Funds)": "SIP (Systematic Investment Plan): You invest a fixed small amount every month into mutual funds. Helps build wealth over time.",
+      "SIP": "SIP (Systematic Investment Plan): You invest a fixed small amount every month into mutual funds. Helps build wealth over time.",
+      "Mutual Funds": "Mutual Funds: Your money is pooled with others and invested in many stocks/bonds by professionals. Returns can be higher, but can go up/down.",
+      "SIP (Equity Mutual Funds)": "Equity Mutual Funds (via SIP): Monthly investing into funds that buy company shares. Higher growth potential, but value fluctuates.",
+      "Budgeting": "Budgeting: Planning your income and expenses so you don’t overspend. This creates savings (surplus) first.",
+      "Emergency Buffer": "Emergency Buffer: Money kept aside for unexpected needs (medical, job loss). Usually kept in very safe options."
+    };
+
+    function buildDefinitionsText(recommended) {
+      if (!recommended || !Array.isArray(recommended.instruments)) return "";
+
+      const lines = [];
+      lines.push(`Recommended Plan: ${recommended.title || "N/A"}`);
+      lines.push("");
+
+      // add explanations only for the instruments in the recommended plan
+      const seen = new Set();
+      recommended.instruments.forEach(inst => {
+        const key = String(inst || "").trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+
+        const def = termDefinitions[key] || `${key}: (Definition not added yet — you can add it in termDefinitions.)`;
+        lines.push(`• ${def}`);
+      });
+
+      return lines.join("\n");
+    }
+
     document.getElementById("intakeForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -145,6 +179,7 @@
       resultBox.style.display = "block";
       plansDiv.innerHTML = `<div class="plan-card"><b>Loading analysis...</b></div>`;
       aiBox.style.display = "none";
+      aiText.innerText = "Loading...";
 
       let res, text;
       try {
@@ -159,7 +194,6 @@
         return;
       }
 
-      // If API returns 404/500/etc show it clearly
       if (!res.ok) {
         plansDiv.innerHTML = `<div class="plan-card"><b>API Error:</b> ${res.status}\n\n${text}</div>`;
         return;
@@ -201,21 +235,31 @@
         plansDiv.appendChild(card);
       });
 
-      // Show AI section if present
+      // ✅ Build AI box text (AI + definitions)
+      const defsText = buildDefinitionsText(result.recommended);
+
       if (result.ai && !result.ai.error) {
         aiBox.style.display = "block";
-        aiText.innerText =
-          `Sentiment: ${result.ai.sentiment || "N/A"}\n\n` +
+
+        const sentimentLine = `Sentiment: ${result.ai.sentiment || "N/A"}`;
+        const keyPhrasesLine =
           `Key phrases: ${
             (result.ai.keyPhrases && result.ai.keyPhrases.length > 0)
               ? result.ai.keyPhrases.join(", ")
               : "None detected"
           }`;
+
+        aiText.innerText =
+          `${sentimentLine}\n\n${keyPhrasesLine}\n\n---\n\n${defsText}`;
+
       } else if (result.ai && result.ai.error) {
+        // Even if AI fails, still show definitions
         aiBox.style.display = "block";
-        aiText.innerText = `AI Error: ${result.ai.error}`;
+        aiText.innerText = `AI Error: ${result.ai.error}\n\n---\n\n${defsText}`;
       } else {
-        aiBox.style.display = "none";
+        // No AI returned, still show definitions (you wanted it inside AI box)
+        aiBox.style.display = "block";
+        aiText.innerText = defsText || "No explanation available.";
       }
     });
   </script>
