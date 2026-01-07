@@ -8,13 +8,13 @@
 
   <style>
     .plans {
-      margin-top: 25px;
+      margin-top: 18px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 15px;
     }
 
-    .plan-card {
+    .card {
       border: 2px solid #ddd;
       border-radius: 8px;
       padding: 15px;
@@ -22,21 +22,9 @@
       white-space: pre-wrap;
     }
 
-    .plan-card h3 {
-      margin-top: 0;
-      color: #333;
-    }
+    .card h3 { margin-top: 0; color: #333; }
 
-    .risk {
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-
-    .recommended {
-      border-color: #0078D4;
-      background: #e8f3ff;
-    }
-
+    .recommended { border-color: #0078D4; background: #e8f3ff; }
     .recommended-badge {
       background: #0078D4;
       color: white;
@@ -48,11 +36,11 @@
     }
 
     .ai-box {
-      margin-top: 25px;
-      padding: 15px;
-      border: 2px dashed #0078D4;
-      border-radius: 8px;
-      background: #f5faff;
+      margin-top: 20px;
+      padding: 16px;
+      border-left: 5px solid #0078D4;
+      border-radius: 6px;
+      background: #f9fbff;
       white-space: pre-wrap;
     }
   </style>
@@ -61,125 +49,61 @@
 <body>
   <div class="container">
     <h1>EduFinance Insight</h1>
-    <p class="subtitle">
-      Helping students understand education choices and financial challenges — together.
-    </p>
+    <p class="subtitle">Understand your current money situation + learn proven principles.</p>
 
     <form id="intakeForm">
       <label>Your Name</label>
-      <input type="text" name="name" required />
+      <input type="text" name="name" placeholder="Optional" />
 
-      <label>You are a</label>
-      <select name="role">
-        <option>School Student</option>
-        <option>College Student</option>
-        <option>Graduate</option>
-        <option>Working Professional</option>
-      </select>
-
-      <label>Main Education Goal</label>
-      <input type="text" name="educationGoal" />
-
-      <label>Financial Concern</label>
-      <select name="financialConcern">
-        <option>High tuition fees</option>
-        <option>Education loan confusion</option>
-        <option>Family financial pressure</option>
-        <option>Not sure if course is worth the cost</option>
-      </select>
-
-      <label>Describe the problem you are facing</label>
-      <textarea name="problemDescription"></textarea>
-
-      <label>How do you currently fund your education?</label>
-      <select name="fundingSource">
-        <option>Family support</option>
-        <option>Education loan</option>
-        <option>Scholarship</option>
-        <option>Self-funded / Working</option>
-      </select>
-
-      <label>Time Horizon (When do you need the money?)</label>
-      <select name="timeHorizon" required>
-        <option>0–6M</option>
-        <option>6–24M</option>
-        <option>2–5Y</option>
-        <option>5Y+</option>
-      </select>
-
-      <label>Monthly Income (₹)</label>
+      <!-- ✅ ORDER: Income → Expenses → Savings → Problem -->
+      <label>Monthly Income</label>
       <input type="text" name="income" placeholder="Example: 30000" required />
 
-      <label>Monthly Expenses (₹)</label>
+      <label>Monthly Expenses</label>
       <input type="text" name="expenses" placeholder="Example: 20000" required />
 
-      <label>Current Savings (₹)</label>
+      <label>Current Savings</label>
       <input type="text" name="savings" placeholder="Example: 50000" required />
 
-      <button type="submit">Submit</button>
+      <label>Describe your financial problem / goal</label>
+      <textarea name="problemDescription" placeholder="Example: I want to save for studies, but I overspend and feel confused about investing."></textarea>
+
+      <button type="submit">Get Insight</button>
     </form>
 
-    <!-- RESULTS (ONLY ONCE) -->
     <div id="resultBox" style="display:none;">
-      <h2>Your Financial Options</h2>
-      <div id="plans" class="plans"></div>
+      <h2>Your Output</h2>
 
-      <!-- We will also show definitions here (same box) -->
-      <div id="aiExplanation" class="ai-box" style="display:none;">
-        <h3>AI Explanation</h3>
-        <p id="aiText">Loading...</p>
+      <div id="summary" class="card"></div>
+
+      <div class="plans" id="plans"></div>
+
+      <div id="educationBox" class="ai-box" style="display:none;">
+        <h3>Education + Principles</h3>
+        <p id="eduText">Loading...</p>
       </div>
     </div>
   </div>
 
   <script>
-    // ✅ Simple layman definitions (used INSIDE AI box)
-    const termDefinitions = {
-      "FD (Fixed Deposit)": "FD (Fixed Deposit): You keep money in a bank for a fixed time and get guaranteed interest. Safer, but returns are usually lower.",
-      "FD": "FD (Fixed Deposit): You keep money in a bank for a fixed time and get guaranteed interest. Safer, but returns are usually lower.",
-      "SIP (Mutual Funds)": "SIP (Systematic Investment Plan): You invest a fixed small amount every month into mutual funds. Helps build wealth over time.",
-      "SIP": "SIP (Systematic Investment Plan): You invest a fixed small amount every month into mutual funds. Helps build wealth over time.",
-      "Mutual Funds": "Mutual Funds: Your money is pooled with others and invested in many stocks/bonds by professionals. Returns can be higher, but can go up/down.",
-      "SIP (Equity Mutual Funds)": "Equity Mutual Funds (via SIP): Monthly investing into funds that buy company shares. Higher growth potential, but value fluctuates.",
-      "Budgeting": "Budgeting: Planning your income and expenses so you don’t overspend. This creates savings (surplus) first.",
-      "Emergency Buffer": "Emergency Buffer: Money kept aside for unexpected needs (medical, job loss). Usually kept in very safe options."
-    };
+    const form = document.getElementById("intakeForm");
 
-    function buildDefinitionsText(recommended) {
-      if (!recommended || !Array.isArray(recommended.instruments)) return "";
-
-      const lines = [];
-      lines.push(`Recommended Plan: ${recommended.title || "N/A"}`);
-      lines.push("");
-
-      // add explanations only for the instruments in the recommended plan
-      const seen = new Set();
-      recommended.instruments.forEach(inst => {
-        const key = String(inst || "").trim();
-        if (!key || seen.has(key)) return;
-        seen.add(key);
-
-        const def = termDefinitions[key] || `${key}: (Definition not added yet — you can add it in termDefinitions.)`;
-        lines.push(`• ${def}`);
-      });
-
-      return lines.join("\n");
-    }
-
-    document.getElementById("intakeForm").addEventListener("submit", async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const formData = Object.fromEntries(new FormData(e.target).entries());
 
       const resultBox = document.getElementById("resultBox");
+      const summaryDiv = document.getElementById("summary");
       const plansDiv = document.getElementById("plans");
-      const aiBox = document.getElementById("aiExplanation");
-      const aiText = document.getElementById("aiText");
+      const educationBox = document.getElementById("educationBox");
+      const eduText = document.getElementById("eduText");
 
       resultBox.style.display = "block";
-      plansDiv.innerHTML = `<div class="plan-card"><b>Loading analysis...</b></div>`;
-      aiBox.style.display = "none";
-      aiText.innerText = "Loading...";
+      summaryDiv.innerHTML = "<b>Loading...</b>";
+      plansDiv.innerHTML = `<div class="card"><b>Loading recommendations...</b></div>`;
+      educationBox.style.display = "none";
+      eduText.innerText = "Loading...";
 
       let res, text;
       try {
@@ -190,34 +114,44 @@
         });
         text = await res.text();
       } catch (err) {
-        plansDiv.innerHTML = `<div class="plan-card"><b>Network error:</b>\n${String(err)}</div>`;
+        summaryDiv.innerHTML = `<b>Network error:</b>\n${String(err)}`;
         return;
       }
 
       if (!res.ok) {
-        plansDiv.innerHTML = `<div class="plan-card"><b>API Error:</b> ${res.status}\n\n${text}</div>`;
+        summaryDiv.innerHTML = `<b>API Error:</b> ${res.status}\n\n${text}`;
         return;
       }
 
       let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        plansDiv.innerHTML = `<div class="plan-card"><b>Invalid API response (not JSON):</b>\n\n${text}</div>`;
+      try { data = JSON.parse(text); }
+      catch {
+        summaryDiv.innerHTML = `<b>Invalid API response (not JSON):</b>\n\n${text}`;
         return;
       }
 
       const result = data.result;
-      if (!result || !Array.isArray(result.options)) {
-        plansDiv.innerHTML = `<div class="plan-card"><b>Unexpected API response:</b>\n\n${JSON.stringify(data, null, 2)}</div>`;
+      if (!result) {
+        summaryDiv.innerHTML = `<b>Unexpected response:</b>\n\n${JSON.stringify(data, null, 2)}`;
         return;
       }
 
-      // Render plan cards
+      // 1) Summary
+      summaryDiv.innerHTML =
+        `<h3>Current Financial Position: ${result.stage?.label || "N/A"}</h3>` +
+        `<b>What this means:</b>\n${result.stage?.meaning || ""}\n\n` +
+        `<b>Key numbers:</b>\n` +
+        `• Income: ${result.currency}${result.income}\n` +
+        `• Expenses: ${result.currency}${result.expenses}\n` +
+        `• Surplus: ${result.currency}${result.surplus}\n` +
+        `• Savings: ${result.currency}${result.savings}\n` +
+        `• Savings rate: ${result.metrics?.savingsRatePct || 0}%`;
+
+      // 2) Plans
       plansDiv.innerHTML = "";
-      result.options.forEach(plan => {
+      (result.options || []).forEach(plan => {
         const card = document.createElement("div");
-        card.className = "plan-card";
+        card.className = "card";
 
         if (result.recommended && plan.title === result.recommended.title) {
           card.classList.add("recommended");
@@ -226,41 +160,17 @@
 
         card.innerHTML += `
           <h3>${plan.title}</h3>
-          <div class="risk">Risk Level: ${plan.risk}</div>
-          <p><b>Instruments:</b> ${(plan.instruments || []).join(", ")}</p>
-          <p><b>Allocation:</b> ${plan.allocation || ""}</p>
-          <p>${plan.why || ""}</p>
+          <div><b>Risk:</b> ${plan.risk}</div>
+          <div><b>Instruments:</b> ${(plan.instruments || []).join(", ")}</div>
+          <div><b>Allocation:</b> ${plan.allocation || ""}</div>
+          <div style="margin-top:10px">${plan.why || ""}</div>
         `;
-
         plansDiv.appendChild(card);
       });
 
-      // ✅ Build AI box text (AI + definitions)
-      const defsText = buildDefinitionsText(result.recommended);
-
-      if (result.ai && !result.ai.error) {
-        aiBox.style.display = "block";
-
-        const sentimentLine = `Sentiment: ${result.ai.sentiment || "N/A"}`;
-        const keyPhrasesLine =
-          `Key phrases: ${
-            (result.ai.keyPhrases && result.ai.keyPhrases.length > 0)
-              ? result.ai.keyPhrases.join(", ")
-              : "None detected"
-          }`;
-
-        aiText.innerText =
-          `${sentimentLine}\n\n${keyPhrasesLine}\n\n---\n\n${defsText}`;
-
-      } else if (result.ai && result.ai.error) {
-        // Even if AI fails, still show definitions
-        aiBox.style.display = "block";
-        aiText.innerText = `AI Error: ${result.ai.error}\n\n---\n\n${defsText}`;
-      } else {
-        // No AI returned, still show definitions (you wanted it inside AI box)
-        aiBox.style.display = "block";
-        aiText.innerText = defsText || "No explanation available.";
-      }
+      // 3) Education box (principles + terms + sentiment)
+      educationBox.style.display = "block";
+      eduText.innerText = result.educationText || "No education text available.";
     });
   </script>
 </body>

@@ -5,9 +5,8 @@ body {
   padding: 0;
 }
 
-/* Main container (form + results) */
 .container {
-  max-width: 700px;   /* slightly wider for better readability */
+  max-width: 780px;
   background: white;
   margin: 40px auto;
   padding: 30px;
@@ -23,18 +22,16 @@ h1 {
 .subtitle {
   text-align: center;
   color: #555;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
-  margin-top: 15px;
+  margin-top: 14px;
   font-weight: bold;
 }
 
-input,
-select,
-textarea {
+input, select, textarea {
   width: 100%;
   padding: 10px;
   margin-top: 6px;
@@ -43,12 +40,12 @@ textarea {
 }
 
 textarea {
-  height: 100px;
+  height: 110px;
   resize: vertical;
 }
 
 button {
-  margin-top: 25px;
+  margin-top: 22px;
   width: 100%;
   padding: 12px;
   background: #0078D4;
@@ -61,36 +58,4 @@ button {
 
 button:hover {
   background: #005ea6;
-}
-
-/* ============================= */
-/* AI EXPLANATION SECTION */
-/* ============================= */
-
-.ai-box {
-  margin-top: 35px;
-  padding: 20px;
-  background: #f9fbff;
-  border-left: 5px solid #0078D4;
-  border-radius: 6px;
-}
-
-.ai-box h3 {
-  margin-top: 0;
-  color: #0078D4;
-}
-
-#aiText {
-  line-height: 1.7;
-  font-size: 15px;
-  color: #333;
-}
-
-/* Optional: wider AI explanation only */
-@media (min-width: 900px) {
-  .ai-box {
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-  }
 }

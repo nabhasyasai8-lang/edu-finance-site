@@ -4,9 +4,7 @@
   "private": true,
   "type": "commonjs",
   "main": "index.js",
-  "scripts": {
-    "start": "func start"
-  },
+  "scripts": { "start": "func start" },
   "dependencies": {
     "@azure/ai-text-analytics": "^5.1.0"
   }
