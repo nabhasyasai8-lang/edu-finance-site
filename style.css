@@ -1,22 +1,22 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f4f6f8;
+  background: black;
   margin: 0;
   padding: 0;
 }
 
 .container {
   max-width: 780px;
-  background: white;
+  background: black;
   margin: 40px auto;
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px green;
 }
 
 h1 {
   text-align: center;
-  color: #0078D4;
+  color: green ;
 }
 
 .subtitle {
@@ -36,7 +36,7 @@ input, select, textarea {
   padding: 10px;
   margin-top: 6px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid black ;
 }
 
 textarea {
@@ -48,8 +48,8 @@ button {
   margin-top: 22px;
   width: 100%;
   padding: 12px;
-  background: #0078D4;
-  color: white;
+  background: green;
+  color: black;
   border: none;
   border-radius: 4px;
   font-size: 16px;
@@ -57,5 +57,5 @@ button {
 }
 
 button:hover {
-  background: #005ea6;
+  background: green;
 }
