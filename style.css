@@ -132,13 +132,11 @@ button:hover {
   white-space: pre-wrap;
 }
 
-/* Force text visibility inside cards */
 .card *,
 .plan-card * {
   color: #e6e6e6 !important;
 }
 
-/* Card headings */
 .card h3,
 .plan-card h3 {
   color: #00ff7f !important;
@@ -146,7 +144,7 @@ button:hover {
 }
 
 /* =============================== */
-/* RECOMMENDED CARD */
+/* RECOMMENDED */
 /* =============================== */
 .recommended {
   background: rgba(0, 255, 120, 0.06) !important;
@@ -175,21 +173,27 @@ button:hover {
 }
 
 /* =============================== */
-/* AI / EDUCATION BOX */
+/* AI / EDUCATION BOX (LAST BOX FIX) */
 /* =============================== */
 .ai-box {
   margin-top: 28px;
   padding: 20px;
-  background: #050505;
-  border-left: 4px solid #00ff7f;
+  background: #050505 !important;                 /* force dark */
+  border-left: 4px solid #00ff7f !important;
   border-radius: 8px;
-  box-shadow: inset 0 0 10px rgba(0, 255, 120, 0.15);
+  box-shadow: inset 0 0 10px rgba(0, 255, 120, 0.15) !important;
   white-space: pre-wrap;
+  color: #e6e6e6 !important;                      /* force readable */
+}
+
+/* force ALL text inside the last box */
+.ai-box * {
+  color: #e6e6e6 !important;
 }
 
 .ai-box h3 {
   margin-top: 0;
-  color: #00ff7f;
+  color: #00ff7f !important;
 }
 
 /* =============================== */
