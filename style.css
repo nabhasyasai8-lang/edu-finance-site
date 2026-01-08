@@ -18,8 +18,8 @@ body {
   margin: 40px auto;
   padding: 32px;
   border-radius: 12px;
-  box-shadow: 0 0 18px rgba(0, 255, 120, 0.35);
   border: 1px solid rgba(0, 255, 120, 0.25);
+  box-shadow: 0 0 18px rgba(0, 255, 120, 0.35);
 }
 
 /* =============================== */
@@ -29,12 +29,10 @@ h1 {
   text-align: center;
   color: #00ff7f;
   margin-bottom: 6px;
-  letter-spacing: 0.5px;
 }
 
-h2 {
+h2, h3 {
   color: #00ff7f;
-  margin-top: 26px;
 }
 
 .subtitle {
@@ -77,8 +75,8 @@ textarea::placeholder {
 }
 
 input:focus,
-textarea:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: #00ff7f;
   box-shadow: 0 0 6px rgba(0, 255, 120, 0.5);
 }
@@ -105,16 +103,14 @@ button {
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 button:hover {
-  transform: translateY(-1px);
   box-shadow: 0 0 14px rgba(0, 255, 120, 0.7);
 }
 
 /* =============================== */
-/* RESULT / OUTPUT AREA */
+/* RESULT AREA */
 /* =============================== */
 #resultBox {
   margin-top: 30px;
@@ -122,49 +118,49 @@ button:hover {
 }
 
 /* =============================== */
-/* OUTPUT CARDS (FIX WHITE ISSUE) */
+/* FIX WHITE OUTPUT CARDS */
 /* =============================== */
 .card,
 .plan-card {
-  background: #0a0a0a;
+  background: #0a0a0a !important;
   border-radius: 10px;
   padding: 18px;
   margin-top: 18px;
-  border: 1px solid rgba(0, 255, 120, 0.25);
-  box-shadow: 0 0 10px rgba(0, 255, 120, 0.15);
-  color: #e6e6e6;
+  border: 1px solid rgba(0, 255, 120, 0.25) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 120, 0.15) !important;
+  color: #e6e6e6 !important;
   white-space: pre-wrap;
 }
 
-/* Ensure ALL text inside cards is readable */
+/* Force text visibility inside cards */
 .card *,
 .plan-card * {
-  color: #e6e6e6;
+  color: #e6e6e6 !important;
 }
 
 /* Card headings */
 .card h3,
 .plan-card h3 {
+  color: #00ff7f !important;
   margin-top: 0;
-  color: #00ff7f;
 }
 
 /* =============================== */
 /* RECOMMENDED CARD */
 /* =============================== */
 .recommended {
-  border: 2px solid #00ff7f;
-  background: rgba(0, 255, 120, 0.06);
+  background: rgba(0, 255, 120, 0.06) !important;
+  border: 2px solid #00ff7f !important;
 }
 
 .recommended-badge {
-  display: inline-block;
-  background: #00ff7f;
-  color: #000;
+  background: #00ff7f !important;
+  color: #000 !important;
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 700;
   border-radius: 999px;
+  display: inline-block;
   margin-bottom: 10px;
 }
 
@@ -194,14 +190,6 @@ button:hover {
 .ai-box h3 {
   margin-top: 0;
   color: #00ff7f;
-}
-
-/* =============================== */
-/* RISK TEXT */
-/* =============================== */
-.risk {
-  color: #c8f7dc;
-  font-weight: 600;
 }
 
 /* =============================== */
